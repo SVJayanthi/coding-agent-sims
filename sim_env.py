@@ -1,8 +1,10 @@
 import docker
 import asyncio
 import time
+import ray
 from data_structures import SimConfig, TaskSpec, AgentAction, ActionResult, Workspace, EvaluationMetrics, ActionType
 
+@ray.remote
 class SimulationEnvironment:
     def __init__(self, config: SimConfig):
         self.config = config
@@ -45,7 +47,8 @@ class SimulationEnvironment:
             
             # Load codebase snapshot into the volume (simplified for now)
             # In production, this would load the actual codebase snapshot
-            container.exec_run(f"echo '# {task_spec.description}' > /workspace/README.md")
+            readme_content = f"# {task_spec.description}".replace("'", "'\"'\"'")
+            container.exec_run(["sh", "-c", f"echo '{readme_content}' > /workspace/README.md"])
             
             return Workspace(
                 workspace_id=workspace_id,
